@@ -23,12 +23,12 @@ int main(int argc, char **argv)
     //Create model for DUT
     cAPBUart16550TestBench* testBench = new cAPBUart16550TestBench(contextp.get());
 
-    //testBench->opentrace("waveform.vcd");
+    testBench->opentrace("waveform.vcd");
 
     //Simulate the design (until $finish)
     while (!testBench->finished())
     {
-
+        testBench->tick();
     }
 
     delete testBench;

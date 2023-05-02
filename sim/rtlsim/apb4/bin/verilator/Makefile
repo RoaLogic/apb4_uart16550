@@ -46,15 +46,14 @@ OBJDIR=obj_dir
 
 #Set VERILATOR_ROOT if not already set
 VERILATOR_ROOT ?= $(shell bash -c 'verilator -V | grep VERILATOR_ROOT | head -1 | sed -e " s/^.*=\s*//"')
-VERILATOR_FLAGS ?= -Wall -Wno-PINCONNECTEMPTY 
+VERILATOR_FLAGS ?= -Wall -Wno-PINCONNECTEMPTY --trace
 VERILATE_FLAGS ?= -CFLAGS -DVL_NO_LEGACY $(VERILATOR_FLAGS) -structs-packed --timing
 
 #These files need to be included in the compile
-VERILATOR_CXX     = $(addprefix $(VERILATOR_ROOT)/include/, verilated_threads.cpp verilated.cpp)
+VERILATOR_CXX     = $(addprefix $(VERILATOR_ROOT)/include/, verilated_threads.cpp verilated.cpp verilated_vcd_c.cpp)
 VERILATOR_INCLUDE = $(addprefix -I, $(VERILATOR_ROOT)/include $(VERILATOR_ROOT)/include/vltstd)
 
 INCLUDE = $(addprefix -I, $(TB_SRC_DIR)/verilator/verilator-simulation/testbench)
-#$(TB_SRC_DIR)/verilator/verilator-simulation/testbench
 
 #CXX Variables
 CXX ?= g++
