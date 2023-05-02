@@ -108,6 +108,7 @@ $(SIMULATORS): % : %/Makefile $(TB_PREREQ)
 	@$(MAKE) $(MS) -C $@ sim				\
 	VLOG="$(abspath $(RTL_VLOG) $(TB_VLOG))"		\
 	TB_CXX="$(abspath $(TB_CXX))"				\
+	TB_CXX_INCL="$(abspath $(TB_CXX_INCL))"			\
 	TECHLIBS="$(TECHLIBS)"					\
 	LIBDIRS="$(LIBDIRS)"					\
 	LIBEXT="$(LIBEXT)"					\
