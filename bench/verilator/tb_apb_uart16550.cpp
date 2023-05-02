@@ -37,10 +37,12 @@
 
 #include "tb_apb_uart16550.hpp"
 
+using namespace RoaLogic::testbench::units;
+
 cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) : 
     cTestBench<Vapb_uart16550>(context)
 {
-    addClock(_core->PCLK, 6.0E-9, 4.0E-9);
+    addClock(_core->PCLK, 6.0_ns, 4.0_ns);
 } 
 
 cAPBUart16550TestBench::~cAPBUart16550TestBench()
