@@ -5,7 +5,7 @@
 //   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
 //   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
 //                                             `---'               //
-//    Base Class for Verilator Testbench                           //
+//             Reset signal control                                //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -50,6 +50,14 @@ namespace RoaLogic
 {
 namespace test
 {
+    /**
+     * @class cReset
+     * @author Bjorn Schouteten
+     * @brief Class to control a single reset input of a design
+     * @version 0.1
+     * @date 03-May-2023
+     *
+     */
     class cReset : public cObserver
     {
         private:
@@ -59,6 +67,13 @@ namespace test
         vluint64_t  _tickCount;
 
         public:
+        /**
+         * @brief Construct a new cReset object
+         * 
+         * @param[in] reset             The reset pin 
+         * @param[in] tickCountAssert   The tickcount to assert a reset
+         * @param[in] tickCountDeassert The tickcount to deassert a reset
+         */
         cReset(uint8_t& reset, uint32_t tickCountAssert, uint32_t tickCountDeassert) :
             _reset(reset),
             _tickCountAssert(tickCountAssert),
@@ -68,11 +83,26 @@ namespace test
             _reset = 1;
         }
 
+        /**
+         * @brief Destroy the cReset object
+         * 
+         */
         ~cReset()
         {
 
         }
 
+        /**
+         * @brief Notify event
+         * @details Receive notify events 
+         * 
+         * Only handle rising edge of the clock 
+         * When the _tickCount is between the _tickCountAssert & _tickCountDeassert then 
+         * assert a reset in any other case deassert the reset
+         * 
+         * @param[in] aEvent    The event which happend
+         * @return Always returns success
+         */
         eErrorCode notify(eEvent aEvent)
         {
             if(aEvent == eEvent::risingEdge)
