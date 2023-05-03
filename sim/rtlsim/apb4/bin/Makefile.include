@@ -72,8 +72,9 @@ TB_SRC_DIR=$(ROOT_DIR)/bench/
 TB_VLOG=
 TB_VHDL=
 TB_CXX = $(TB_SRC_DIR)/verilator/main.cpp \
-		 $(TB_SRC_DIR)/verilator/$(TB_TOP).cpp
-TB_CXX_INCL = $(TB_SRC_DIR)/verilator/verilator-simulation/testbench
+	 $(TB_SRC_DIR)/verilator/$(TB_TOP).cpp
+TB_CXX_INCL = $(TB_SRC_DIR)/verilator/verilator-simulation/testbench	\
+	      $(TB_SRC_DIR)/verilator/verilator-simulation/bus
 
 
 #####################################################################
