@@ -69,15 +69,9 @@ endif
 endif
 
 
-sim: $(OBJDIR)/V$(RTL_TOP)__ALL.o $(PLI)
-	echo "--- Building $(TOP)"
-	$(CXX) $(CXXFLAGS) -std=$(CPPSTD) -stdlib=$(CPPLIB)	\
-	$(VERILATOR_INCLUDE) $(VERILATOR_CXX)			\
-	-I./$(OBJDIR) $^ $(TB_CXX)				\
-	$(addprefix -I, $(TB_CXX_INCL))				\
-	$(LDFLAGS) $(LDLIBS)					\
-	-o $(TOP)
-
+sim: $(TOP)
+	@echo "--- Running $(TOP)"
+	./$(TOP)
 
 simw: verilate $(PLI)
 	echo "--- Running sim"
@@ -93,13 +87,23 @@ lint: $(VLOG)
 	@echo "--- Done, see $(TOP).lint.log"
 
 clean:
-	@rm -rf $(OBJDIR) log
+	@rm -rf $(TOP) $(OBJDIR) log
 
 
 
 #################################################################
-## VHDL
+## Build app
 #################################################################
+
+$(TOP): $(OBJDIR)/V$(RTL_TOP)__ALL.o $(PLI)
+	echo "--- Building $(TOP)"
+	$(CXX) $(CXXFLAGS) -std=$(CPPSTD) -stdlib=$(CPPLIB)	\
+	$(VERILATOR_INCLUDE) $(VERILATOR_CXX)			\
+	-I./$(OBJDIR) $^ $(TB_CXX)				\
+	$(addprefix -I, $(TB_CXX_INCL))				\
+	$(LDFLAGS) $(LDLIBS)					\
+	-o $(TOP)
+
 
 
 #################################################################
