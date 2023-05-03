@@ -95,11 +95,11 @@ clean:
 ## Build app
 #################################################################
 
-$(TOP): $(OBJDIR)/V$(RTL_TOP)__ALL.o $(PLI)
+$(TOP): $(OBJDIR)/V$(RTL_TOP)__ALL.o $(PLI) Makefile ../Makefile.include
 	echo "--- Building $(TOP)"
 	$(CXX) $(CXXFLAGS) -std=$(CPPSTD) -stdlib=$(CPPLIB)	\
 	$(VERILATOR_INCLUDE) $(VERILATOR_CXX)			\
-	-I./$(OBJDIR) $^ $(TB_CXX)				\
+	-I./$(OBJDIR) $(filter-out Makefile ../Makefile.include,$^) $(TB_CXX)	\
 	$(addprefix -I, $(TB_CXX_INCL))				\
 	$(LDFLAGS) $(LDLIBS)					\
 	-o $(TOP)
