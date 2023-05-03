@@ -5,7 +5,7 @@
 //   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
 //   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
 //                                             `---'               //
-//    UART16550 Verilator Testbench                                //
+//    Base Class for Verilator Testbench                           //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -32,23 +32,79 @@
 //   POSSIBILITY OF SUCH DAMAGE.                                   //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
+/*!
+ * @file reset.hpp
+ * @author Bjorn Schouteten
+ * @brief Clock object
+ * @version 0.1
+ * @date 03-may-2023
+ * @copyright See beginning of file
+ */
 
+#include <observer.hpp>
 
+#ifndef RESET_HPP
+#define RESET_HPP
 
-#include "tb_apb_uart16550.hpp"
-
-using namespace RoaLogic::testbench::units;
-
-cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) : 
-    cTestBench<Vapb_uart16550>(context),
-    _resetInput(_core->PRESETn, 5, 10)
+namespace RoaLogic
 {
-    _apbClock = addClock(_core->PCLK, 6.0_ns, 4.0_ns);
-
-    _apbClock->registerObserver(&_resetInput);
-} 
-
-cAPBUart16550TestBench::~cAPBUart16550TestBench()
+namespace test
 {
+    class cReset : public cObserver
+    {
+        private:
+        uint8_t&    _reset;             //!< Points to reset input of device under test
+        uint32_t    _tickCountAssert;   //!< Tickcount to assert the reset pin
+        uint32_t    _tickCountDeassert; //!< Tickcount to deassert the reset pin
+        vluint64_t  _tickCount;
 
+        public:
+        cReset(uint8_t& reset, uint32_t tickCountAssert, uint32_t tickCountDeassert) :
+            _reset(reset),
+            _tickCountAssert(tickCountAssert),
+            _tickCountDeassert(tickCountDeassert)
+        {
+            _tickCount = 0;
+            _reset = 1;
+        }
+
+        ~cReset()
+        {
+
+        }
+
+        eErrorCode notify(eEvent aEvent)
+        {
+            if(aEvent == eEvent::risingEdge)
+            {
+                _tickCount++;
+
+                if(_tickCount >= _tickCountAssert && _tickCount <_tickCountDeassert)
+                {
+                    if(_reset == 1)
+                    {
+                        _reset = 0;
+                        std::cout << "RESET_H - Assert reset:\n";
+                    }                    
+                }
+                else
+                {
+                    if(_reset == 0)
+                    {
+                        _reset = 1;
+                        std::cout << "RESET_H - Deassert reset:\n";
+                    }                    
+                }
+            }
+
+            return eErrorCode::success;
+        }
+
+    };
+
+
+}    
 }
+
+
+#endif
