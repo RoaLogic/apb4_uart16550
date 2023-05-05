@@ -24,10 +24,23 @@
 using namespace RoaLogic::testbench;
 using namespace RoaLogic::testbench::test;
 
+enum class coyieldCallback_t {
+  posedge,
+  negedge
+};
+
+struct coyieldReturn_t {
+    cClock* clockObj;
+    coyieldCallback_t callback;
+};
+
+
 class cAPBUart16550TestBench : public cTestBench<Vapb_uart16550>
 {
     public:
         cClock* pclk;
+        cClock* tmp_clk1;
+        cClock* tmp_clk2;
 
         //constructor
         cAPBUart16550TestBench(VerilatedContext* context);
@@ -36,8 +49,8 @@ class cAPBUart16550TestBench : public cTestBench<Vapb_uart16550>
         ~cAPBUart16550TestBench();
 
         //Test 1
-        sTest<uint8_t> test1();
+        sTest<coyieldReturn_t> test1();
 
         //Test 2
-        sTest<uint8_t> test2();
+        //sTest<uint8_t> test2();
 };

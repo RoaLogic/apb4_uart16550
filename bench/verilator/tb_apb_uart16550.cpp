@@ -41,7 +41,6 @@
 
 #define waitfor_posedge(clock,func) {clock->atPosedge(func); co_yield 0;}
 
-
 using namespace RoaLogic::testbench::units;
 
 //Constructor
@@ -49,6 +48,11 @@ cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) :
     cTestBench<Vapb_uart16550>(context)
 {
     pclk = addClock(_core->PCLK, 6.0_ns, 4.0_ns);
+
+    //create 2 testclocks
+    //abuse 2 APB signals
+    tmp_clk1 = addClock(_core->PENABLE, 21_MHz);
+    tmp_clk2 = addClock(_core->PWRITE, 50_MHz);
 } 
 
 //Destructor
@@ -59,7 +63,7 @@ cAPBUart16550TestBench::~cAPBUart16550TestBench()
 
 
 //Test1
-sTest<uint8_t> cAPBUart16550TestBench::test1()
+sTest<coyieldReturn_t> cAPBUart16550TestBench::test1()
 {
   _core->PWDATA = 0;
 
@@ -68,28 +72,22 @@ sTest<uint8_t> cAPBUart16550TestBench::test1()
     std::cout << "In test1" << std::endl;
     _core->PWDATA++;
 
-    //This is where we insert waitfor_posedge
-    //posedge means inserting the routine into the posedge_tick for the clock
-    //Because coroutines are stackless, we cannot call co_yield in another method,
-    //  thus creating a posedge() method does not work (that would co_yield posedge)
-    //Macro then?!
-    //Also how do we move the address of the current method into the clock-class and
-    //then call the stored coroutine function to resume it without knowing the actual
-    //type of the function (plus it will be many different functions)
-
-//    pclk->atPosedge(test1);
-//    pclk->atPosedge2<&cAPBUart16550TestBench::test1>();
-//    co_yield 0;
-
-      co_yield pclk->atPosedge();
+    co_yield (coyieldReturn_t){pclk,coyieldCallback_t::posedge};
   }
 }
 
 
 //Test2
+/*
 sTest<uint8_t> cAPBUart16550TestBench::test2()
 {
   _core->PADDR = 0;
+
+  //wait 5 clock cycles
+  for (int i=0; i < 5; i++)
+  {
+    co_yield 0;
+  }
 
   for (int i=0; i < 100; i++)
   {
@@ -100,6 +98,4 @@ sTest<uint8_t> cAPBUart16550TestBench::test2()
     co_yield 0;
   }
 }
-
-
-
+*/

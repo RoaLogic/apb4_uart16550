@@ -27,16 +27,12 @@ int main(int argc, char **argv)
 
     //start both tests
     auto test1 = testBench->test1();
-    auto test2 = testBench->test2();
+//    auto test2 = testBench->test2();
 
     //Simulate the design (until $finish)
     while (!testBench->finished())
     {
         testBench->tick();
-
-        //call the tests until they're done
-        if (test1) test1();
-        if (test2) test2();
     }
 
     delete testBench;
