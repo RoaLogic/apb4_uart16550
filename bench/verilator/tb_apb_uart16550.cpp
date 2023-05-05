@@ -33,13 +33,9 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 
+#include <tb_apb_uart16550.hpp>
 
-
-#include "tb_apb_uart16550.hpp"
-#include "test.hpp"
-
-
-#define waitfor_posedge(clock,func) {clock->atPosedge(func); co_yield 0;}
+//#define waitfor_posedge(clock,func) {clock->atPosedge(func); co_yield 0;}
 
 using namespace RoaLogic::testbench::units;
 
@@ -65,15 +61,15 @@ cAPBUart16550TestBench::~cAPBUart16550TestBench()
 //Test1
 sTest<coyieldReturn_t> cAPBUart16550TestBench::test1()
 {
-  _core->PWDATA = 0;
+    _core->PWDATA = 0;
 
-  for (int i=0; i < 10; i++)
-  {
-    std::cout << "In test1" << std::endl;
-    _core->PWDATA++;
+    for (int i=0; i < 10; i++)
+    {
+        std::cout << "In test1" << std::endl;
+        _core->PWDATA++;
 
-    co_yield (coyieldReturn_t){pclk,coyieldCallback_t::posedge};
-  }
+        co_yield (coyieldReturn_t){pclk,coyieldCallback_t::posedge};
+    }
 }
 
 
