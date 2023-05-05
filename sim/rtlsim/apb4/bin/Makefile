@@ -165,7 +165,7 @@ $(LINTERS): %_lint : %/Makefile $(TB_PREREQ)
 .PHONY: clean distclean mrproper
 clean:
 	@for f in $(wildcard *); do				\
-		if test -d $$f; then $(MAKE) -C $$f clean; fi	\
+		if test -d $$f; then $(MAKE) -C $$f clean TOP=$(TB_TOP); fi	\
 	done
 
 
