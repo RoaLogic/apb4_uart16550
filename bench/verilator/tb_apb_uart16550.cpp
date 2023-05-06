@@ -58,24 +58,31 @@ cAPBUart16550TestBench::~cAPBUart16550TestBench()
 }
 
 
-//Test1
-sTest<coyieldReturn_t> cAPBUart16550TestBench::test1()
+clockedTest_t cAPBUart16550TestBench::waitFor(cClock* clk, unsigned cycles)
 {
-    _core->PWDATA = 0;
+std::cout << "waitFor\n";
+   for (unsigned i=0; i < cycles; i++) waitPosedge(clk);
+}
+
+
+//Test1
+clockedTest_t cAPBUart16550TestBench::test1()
+{
+    _core->PWDATA = 1;
 
     for (int i=0; i < 10; i++)
     {
         std::cout << "In test1" << std::endl;
         _core->PWDATA++;
 
-        co_yield (coyieldReturn_t){pclk,coyieldCallback_t::posedge};
+        waitPosedge(pclk);
     }
 }
 
 
 //Test2
 /*
-sTest<uint8_t> cAPBUart16550TestBench::test2()
+clockedTest_t cAPBUart16550TestBench::test2()
 {
   _core->PADDR = 0;
 
@@ -90,8 +97,7 @@ sTest<uint8_t> cAPBUart16550TestBench::test2()
     std::cout << "In test2" << std::endl;
     _core->PADDR++;
 
-    //This is where we insert waitfor_posedge
-    co_yield 0;
+    waitPosedge(pclk);
   }
 }
 */
