@@ -32,15 +32,15 @@ int main(int argc, char **argv)
      *    while (testbench->test1()) testbench->tick();
      * we get a segfault on the 2nd while(), because the object gets immediately destroyed.
      */
-    auto waitFor100PCLKCycles = testbench->waitFor(testbench->pclk, 100);
-    auto test1                = testbench->test1();
-//    auto test2 = testbench->test2();
 
     //wait 100 cycles
+    auto waitFor100PCLKCycles = testbench->waitFor(testbench->pclk, 100);
     while (waitFor100PCLKCycles) testbench->tick();
 
     //Simulate the design until test1 finishes
-    while (test1) testbench->tick();
+    auto test1 = testbench->test1();
+    auto test2 = testbench->test2();
+    while (test1 || test2) testbench->tick();
 
     //run some more cycles
     while (waitFor100PCLKCycles) testbench->tick();

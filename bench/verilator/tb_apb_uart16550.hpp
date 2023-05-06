@@ -45,5 +45,5 @@ class cAPBUart16550TestBench : public cTestBench<Vapb_uart16550>
         clockedTest_t test1();
 
         //Test 2
-        //clockedTest_t test2();
+        clockedTest_t test2();
 };

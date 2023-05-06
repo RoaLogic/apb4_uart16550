@@ -68,36 +68,30 @@ std::cout << "waitFor\n";
 //Test1
 clockedTest_t cAPBUart16550TestBench::test1()
 {
+    waitPosedge(pclk);
     _core->PWDATA = 1;
 
     for (int i=0; i < 10; i++)
     {
         std::cout << "In test1" << std::endl;
-        _core->PWDATA++;
 
         waitPosedge(pclk);
+        _core->PWDATA++;
     }
 }
 
 
 //Test2
-/*
 clockedTest_t cAPBUart16550TestBench::test2()
 {
+  waitPosedge(tmp_clk1);
   _core->PADDR = 0;
 
-  //wait 5 clock cycles
-  for (int i=0; i < 5; i++)
-  {
-    co_yield 0;
-  }
-
-  for (int i=0; i < 100; i++)
+  for (int i=0; i < 10; i++)
   {
     std::cout << "In test2" << std::endl;
-    _core->PADDR++;
 
-    waitPosedge(pclk);
+    waitPosedge(tmp_clk1);
+    _core->PADDR++;
   }
 }
-*/
