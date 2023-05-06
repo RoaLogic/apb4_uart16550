@@ -21,21 +21,32 @@ int main(int argc, char **argv)
     contextp->commandArgs(argc, argv);
 
     //Create model for DUT
-    cAPBUart16550TestBench* testBench = new cAPBUart16550TestBench(contextp.get());
+    cAPBUart16550TestBench* testbench = new cAPBUart16550TestBench(contextp.get());
 
-    testBench->opentrace("waveform.vcd");
+    testbench->opentrace("waveform.vcd");
 
-    //start both tests
-    auto test1 = testBench->test1();
-//    auto test2 = testBench->test2();
+    /* Need handles to tests
+     * These are like statics. The actual object is destroyed immediately after generation,
+     * but the handle stays alive
+     * if we do:
+     *    while (testbench->test1()) testbench->tick();
+     * we get a segfault on the 2nd while(), because the object gets immediately destroyed.
+     */
+    auto waitFor100PCLKCycles = testbench->waitFor(testbench->pclk, 100);
+    auto test1                = testbench->test1();
+//    auto test2 = testbench->test2();
 
-    //Simulate the design (until $finish)
-    while (!testBench->finished())
-    {
-        testBench->tick();
-    }
+    //wait 100 cycles
+    while (waitFor100PCLKCycles) testbench->tick();
 
-    delete testBench;
+    //Simulate the design until test1 finishes
+    while (test1) testbench->tick();
+
+    //run some more cycles
+    while (waitFor100PCLKCycles) testbench->tick();
+
+    //destroy testbench
+    delete testbench;
     
     //Completed succesfully
     return 0;
