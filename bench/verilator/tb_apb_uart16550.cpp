@@ -72,8 +72,8 @@ void cAPBUart16550TestBench::simpleTest ()
 {
   //Reset APB Bus
 cout << "APB Reset\n";
-  apbMaster->reset();
-cout << "Waiting for clock\n";
+  apbMaster->reset(3);
+cout << "Waiting for done\n";
   while (!apbMaster->done()) tick();
 cout << "simpleTest done\n";
 }
