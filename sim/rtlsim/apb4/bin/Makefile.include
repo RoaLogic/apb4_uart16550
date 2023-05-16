@@ -73,7 +73,9 @@ TB_VLOG=
 TB_VHDL=
 TB_CXX = $(TB_SRC_DIR)/verilator/main.cpp 				\
 	 $(TB_SRC_DIR)/verilator/$(TB_TOP).cpp				\
-	 $(TB_SRC_DIR)/verilator/verilator-simulation/common/uniqueid.cpp
+	 $(TB_SRC_DIR)/verilator/verilator-simulation/common/uniqueid.cpp \
+	 $(TB_SRC_DIR)/verilator/verilator-simulation/common/log.cpp \
+	 $(TB_SRC_DIR)/verilator/verilator-simulation/common/programoptions.cpp
 
 TB_CXX_INCL = $(TB_SRC_DIR)/verilator \
 		  $(TB_SRC_DIR)/verilator/verilator-simulation/testbench	\

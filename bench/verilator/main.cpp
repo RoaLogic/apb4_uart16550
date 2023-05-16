@@ -9,13 +9,28 @@
  * 
  */
 #include <tb_apb_uart16550.hpp>
+#include <programoptions.hpp>
+
+using namespace RoaLogic::common;
 
 //Legacy function required only so linking works on Cygwin and MSVC++ and MacOS
 double sc_time_stamp() { return 0; }
 
-int main(int argc, char **argv)
+int main(int argc, char* argv[])
 {
+    cProgramOptions programOptions;    
     const std::unique_ptr<VerilatedContext> contextp(new VerilatedContext);
+
+    programOptions.add("-l", "-log", "Log file path, when not specified log is written to terminal", true);
+
+    if(programOptions.parse(argc, argv) > 0)
+    {
+        
+    }
+
+    cLog::init(eLogPriority::Info, "");
+
+    cLog::info("Gone through init");
 
     //Pass arguments to Verilated code
     contextp->commandArgs(argc, argv);
