@@ -25,25 +25,8 @@ int main(int argc, char **argv)
 
     testbench->opentrace("waveform.vcd");
 
-    /* Need handles to tests
-     * These are like statics. The actual object is destroyed immediately after generation,
-     * but the handle stays alive
-     * if we do:
-     *    while (testbench->test1()) testbench->tick();
-     * we get a segfault on the 2nd while(), because the object gets immediately destroyed.
-     */
-
-    //wait 100 cycles
-    auto waitFor100PCLKCycles = testbench->waitFor(testbench->pclk, 100);
-    while (waitFor100PCLKCycles) testbench->tick();
-
-    //Simulate the design until test1 finishes
-    auto test1 = testbench->test1();
-    auto test2 = testbench->test2();
-    while (test1 || test2) testbench->tick();
-
-    //run some more cycles
-    while (waitFor100PCLKCycles) testbench->tick();
+    //run simple-test
+    testbench->simpleTest();
 
     //destroy testbench
     delete testbench;

@@ -21,17 +21,18 @@
 //Include test definition
 #include <test.hpp>
 
+//Include APB4 bus
+#include <busapb4.hpp>
+
 using namespace RoaLogic::testbench;
 using namespace RoaLogic::testbench::test;
-
-
+using namespace RoaLogic::bus;
 
 class cAPBUart16550TestBench : public cTestBench<Vapb_uart16550>
 {
     public:
         cClock* pclk;
-        cClock* tmp_clk1;
-        cClock* tmp_clk2;
+        cBusAPB4<uint8_t,uint8_t>* apbMaster;
 
         //constructor
         cAPBUart16550TestBench(VerilatedContext* context);
@@ -39,11 +40,5 @@ class cAPBUart16550TestBench : public cTestBench<Vapb_uart16550>
         //destructor
         ~cAPBUart16550TestBench();
 
-        clockedTest_t waitFor(cClock* clk, unsigned cycles=1);
-
-        //Test 1
-        clockedTest_t test1();
-
-        //Test 2
-        clockedTest_t test2();
+        void simpleTest();
 };

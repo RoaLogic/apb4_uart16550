@@ -35,7 +35,6 @@
 
 #include <tb_apb_uart16550.hpp>
 
-//#define waitfor_posedge(clock,func) {clock->atPosedge(func); co_yield 0;}
 
 using namespace RoaLogic::testbench::units;
 
@@ -43,12 +42,23 @@ using namespace RoaLogic::testbench::units;
 cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) : 
     cTestBench<Vapb_uart16550>(context)
 {
+    //define new clock
     pclk = addClock(_core->PCLK, 6.0_ns, 4.0_ns);
 
-    //create 2 testclocks
-    //abuse 2 APB signals
-    tmp_clk1 = addClock(_core->PENABLE, 21_MHz);
-    tmp_clk2 = addClock(_core->PWRITE, 50_MHz);
+    //Hookup APB4 Bus Master
+cout << "Hookup APB Bus Master\n";
+    apbMaster = new cBusAPB4 <uint8_t,uint8_t>
+                          (pclk,
+                           _core->PRESETn,
+                           _core->PSEL,
+                           _core->PENABLE,
+                           _core->PADDR,
+                           _core->PWRITE,
+                           _core->PWDATA,
+                           _core->PRDATA,
+                           _core->PREADY,
+                           _core->PSLVERR);
+cout << "Done hookup APB Bus Master\n";
 } 
 
 //Destructor
@@ -58,13 +68,19 @@ cAPBUart16550TestBench::~cAPBUart16550TestBench()
 }
 
 
-clockedTest_t cAPBUart16550TestBench::waitFor(cClock* clk, unsigned cycles)
+void cAPBUart16550TestBench::simpleTest ()
 {
-std::cout << "waitFor\n";
-   for (unsigned i=0; i < cycles; i++) waitPosedge(clk);
+  //Reset APB Bus
+cout << "APB Reset\n";
+  apbMaster->reset();
+cout << "Waiting for clock\n";
+  while (!apbMaster->done()) tick();
+cout << "simpleTest done\n";
 }
 
 
+
+/*
 //Test1
 clockedTest_t cAPBUart16550TestBench::test1()
 {
@@ -95,3 +111,4 @@ clockedTest_t cAPBUart16550TestBench::test2()
     _core->PADDR++;
   }
 }
+*/
