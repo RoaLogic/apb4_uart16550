@@ -25,8 +25,11 @@ int main(int argc, char **argv)
 
     testbench->opentrace("waveform.vcd");
 
-    //run simple-test
-    testbench->simpleTest();
+    //run APB Reset test
+    testbench->APBResetTest();
+
+    //run scratchpad test
+    testbench->scratchpadTest(100);
 
     //destroy testbench
     delete testbench;
