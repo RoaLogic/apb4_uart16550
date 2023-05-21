@@ -36,7 +36,9 @@
 #include <tb_apb_uart16550.hpp>
 
 
-using namespace RoaLogic::testbench::units;
+using namespace RoaLogic::testbench::clock::units;
+using RoaLogic::common::ringbuffer;
+using RoaLogic::bus::cBusAPB4;
 
 //Constructor
 cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) : 
@@ -45,9 +47,11 @@ cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) :
     //define new clock
     pclk = addClock(_core->PCLK, 6.0_ns, 4.0_ns);
 
+    //create transaction buffer (16 entries; i.e. 2x FIFO size)
+    transactionBuffer = new ringbuffer<uint8_t>(16);
+
     //Hookup APB4 Bus Master
-cout << "Hookup APB Bus Master\n";
-    apbMaster = new cBusAPB4 <uint8_t,uint8_t>
+    apbMaster = new cBusAPB4 <uint8_t,uint8_t,ringbuffer<uint8_t>>
                           (pclk,
                            _core->PRESETn,
                            _core->PSEL,
@@ -58,25 +62,59 @@ cout << "Hookup APB Bus Master\n";
                            _core->PRDATA,
                            _core->PREADY,
                            _core->PSLVERR);
-cout << "Done hookup APB Bus Master\n";
 } 
 
 //Destructor
 cAPBUart16550TestBench::~cAPBUart16550TestBench()
 {
-
+  //destroy transaction buffer
+  delete transactionBuffer;
 }
 
 
-void cAPBUart16550TestBench::simpleTest ()
+void cAPBUart16550TestBench::APBResetTest ()
 {
   //Reset APB Bus
-cout << "APB Reset\n";
+  std::cout << "APB Reset start\n";
   apbMaster->reset(3);
-cout << "Waiting for done\n";
+
+  std::cout << "Waiting for done\n";
   while (!apbMaster->done()) tick();
-cout << "simpleTest done\n";
+
+  std::cout << "APB Reset done\n";
 }
+
+
+void cAPBUart16550TestBench::scratchpadTest (int runs)
+{
+    uint8_t wval, rval;
+
+    std::cout << "16550 Scratchpad Test\n";
+    for (int run=0; run < runs; run++)
+    {
+        std::cout << "run:" << run << std::endl;
+
+        //generate random value
+        wval = std::rand();
+
+        //write value in scratchpad
+        transactionBuffer->push_back(wval);
+        apbMaster->write(SCR, transactionBuffer);
+        while (!apbMaster->done()) tick();
+
+        //clear transactionBuffer
+        transactionBuffer->clear();
+
+        //read value from scratchpad
+        apbMaster->read(SCR, transactionBuffer);
+        while (!apbMaster->done()) tick();
+        rval = transactionBuffer->pop_front();
+
+        //compare values
+        if (wval != rval) std::cout <<  "ERROR: expected:" << std::hex << wval << " received:" << std::hex << rval << std::endl;
+    }
+}
+
 
 
 

@@ -21,13 +21,36 @@
 //Include APB4 bus
 #include <busapb4.hpp>
 
-using namespace RoaLogic::bus;
+//Include circular buffer for APB4 read/write
+#include <buffer.hpp>
+
+//165550 Register Definitions
+#define RBR 0
+#define THR 0
+#define IER 1
+#define IIR 2
+#define FCR 2
+#define LCR 3
+#define MCR 4
+#define LSR 5
+#define MSR 6
+#define SCR 7
+#define DLL 0
+#define DLM 1
+
+//IER register definitions
+#define ERBF  0x01
+#define ETBEI 0x02
+#define ELSI  0x04
+#define EDSSI 0x08
+
 
 class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart16550>
 {
     public:
-        cClock* pclk;
-        cBusAPB4<uint8_t,uint8_t>* apbMaster;
+        RoaLogic::testbench::clock::cClock* pclk;
+        RoaLogic::bus::cBusAPB4<uint8_t,uint8_t,RoaLogic::common::ringbuffer<uint8_t>>* apbMaster;
+        RoaLogic::common::ringbuffer<uint8_t> *transactionBuffer;
 
         //constructor
         cAPBUart16550TestBench(VerilatedContext* context);
@@ -35,5 +58,6 @@ class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart1
         //destructor
         ~cAPBUart16550TestBench();
 
-        void simpleTest();
+        void APBResetTest();
+        void scratchpadTest(int runs=1);
 };
