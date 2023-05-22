@@ -72,46 +72,52 @@ cAPBUart16550TestBench::~cAPBUart16550TestBench()
 }
 
 
-void cAPBUart16550TestBench::APBResetTest ()
+void cAPBUart16550TestBench::APBIdle(unsigned duration)
 {
-  //Reset APB Bus
-  std::cout << "APB Reset start\n";
-  apbMaster->reset(3);
-
-  std::cout << "Waiting for done\n";
+  apbMaster->idle(duration);
   while (!apbMaster->done()) tick();
 
-  std::cout << "APB Reset done\n";
+  std::cout << "APB Bus Idle\n";
 }
 
 
-void cAPBUart16550TestBench::scratchpadTest (int runs)
+void cAPBUart16550TestBench::APBReset(unsigned duration)
+{
+  apbMaster->reset(duration);
+  while (!apbMaster->done()) tick();
+
+  std::cout << "APB Bus Reset\n";
+}
+
+
+void cAPBUart16550TestBench::scratchpadTest (unsigned runs)
 {
     uint8_t wval, rval;
 
     std::cout << "16550 Scratchpad Test\n";
     for (int run=0; run < runs; run++)
     {
-        std::cout << "run:" << run << std::endl;
+        std::cout << "run:" << run << "...";
 
         //generate random value
         wval = std::rand();
 
         //write value in scratchpad
-        transactionBuffer->push_back(wval);
-        apbMaster->write(SCR, transactionBuffer);
+        apbMaster->write(SCR, wval);
         while (!apbMaster->done()) tick();
-
-        //clear transactionBuffer
-        transactionBuffer->clear();
 
         //read value from scratchpad
-        apbMaster->read(SCR, transactionBuffer);
+        apbMaster->read(SCR, rval);
         while (!apbMaster->done()) tick();
-        rval = transactionBuffer->pop_front();
 
         //compare values
-        if (wval != rval) std::cout <<  "ERROR: expected:" << std::hex << wval << " received:" << std::hex << rval << std::endl;
+        if (wval != rval) {
+            std::cout <<  "ERROR: expected:" << std::hex << wval << " received:" << std::hex << rval << std::endl;
+        }
+        else
+        {
+            std::cout << "ok" << std::endl;
+        }
     }
 }
 

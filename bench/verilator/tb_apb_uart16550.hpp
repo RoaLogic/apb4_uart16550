@@ -58,6 +58,7 @@ class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart1
         //destructor
         ~cAPBUart16550TestBench();
 
-        void APBResetTest();
-        void scratchpadTest(int runs=1);
+        void APBIdle(unsigned duration=1);
+        void APBReset(unsigned duration=1);
+        void scratchpadTest(unsigned runs=1);
 };
