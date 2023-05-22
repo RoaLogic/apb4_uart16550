@@ -25,11 +25,17 @@ int main(int argc, char **argv)
 
     testbench->opentrace("waveform.vcd");
 
+    //Idle APB bus
+    testbench->APBIdle(2);
+
     //run APB Reset test
-    testbench->APBResetTest();
+    testbench->APBReset(3);
 
     //run scratchpad test
-    testbench->scratchpadTest(100);
+    testbench->scratchpadTest(10);
+
+    //Idle APB bus
+    testbench->APBIdle(10);
 
     //destroy testbench
     delete testbench;
