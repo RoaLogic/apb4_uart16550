@@ -13,6 +13,16 @@
 //Legacy function required only so linking works on Cygwin and MSVC++ and MacOS
 double sc_time_stamp() { return 0; }
 
+void getScope()
+{
+std::cout << "Called getScope()" << std::endl;
+    svScope scope = svGetScope();
+    const char* scopeName = svGetNameFromScope(scope);
+
+    std::cout << "ScopeName:" << scopeName << std::endl;
+}
+
+
 int main(int argc, char **argv)
 {
     const std::unique_ptr<VerilatedContext> contextp(new VerilatedContext);
@@ -22,6 +32,7 @@ int main(int argc, char **argv)
 
     //Create model for DUT
     cAPBUart16550TestBench* testbench = new cAPBUart16550TestBench(contextp.get());
+
 
     testbench->opentrace("waveform.vcd");
 
