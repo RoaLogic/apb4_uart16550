@@ -44,6 +44,10 @@ using RoaLogic::bus::cBusAPB4;
 cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) : 
     cTestBench<Vapb_uart16550>(context)
 {
+    //get scope (for DPI)
+    const svScope scope = svGetScopeFromName("TOP.apb_uart16550");
+    svSetScope(scope);
+
     //define new clock
     pclk = addClock(_core->PCLK, 6.0_ns, 4.0_ns);
 
@@ -77,7 +81,7 @@ void cAPBUart16550TestBench::APBIdle(unsigned duration)
   apbMaster->idle(duration);
   while (!apbMaster->done()) tick();
 
-  std::cout << "APB Bus Idle\n";
+  std::cout << "APB Bus Idle" << std::endl;
 }
 
 
@@ -86,18 +90,26 @@ void cAPBUart16550TestBench::APBReset(unsigned duration)
   apbMaster->reset(duration);
   while (!apbMaster->done()) tick();
 
-  std::cout << "APB Bus Reset\n";
+  std::cout << "APB Bus Reset" << std::endl;
 }
 
 
+/**
+ * @brief scratchpadTest reads and writes to the scratchpad register
+ *        This tests the APB to register interface
+ *
+ * @param runs Number of test runs
+ */
 void cAPBUart16550TestBench::scratchpadTest (unsigned runs)
 {
-    uint8_t wval, rval;
+    uint8_t wval, rval, peekval;
+    bool error;
 
     std::cout << "16550 Scratchpad Test\n";
     for (int run=0; run < runs; run++)
     {
         std::cout << "run:" << run << "...";
+        error = false;
 
         //generate random value
         wval = std::rand();
@@ -106,17 +118,50 @@ void cAPBUart16550TestBench::scratchpadTest (unsigned runs)
         apbMaster->write(SCR, wval);
         while (!apbMaster->done()) tick();
 
+        //get register value from Verilog
+        peekval = Vapb_uart16550::uart16550_peek(PEEK_SCR);
+
+        //compare write value with register content
+        //this validates APB write
+        if (wval != peekval)
+        {
+            std::cout << std::endl << "ERROR: written:" << std::hex << unsigned(wval) << " peeked:" << std::hex << unsigned(peekval);
+            error |= true;
+        }
+
         //read value from scratchpad
         apbMaster->read(SCR, rval);
         while (!apbMaster->done()) tick();
 
         //compare values
-        if (wval != rval) {
-            std::cout <<  "ERROR: expected:" << std::hex << wval << " received:" << std::hex << rval << std::endl;
+        if (rval != wval)
+        {
+            std::cout << std::endl << "ERROR: written:" << std::hex << unsigned(wval) << " read:" << std::hex << unsigned(rval);
+            error |= true;
+        }
+
+        //break content in the scratchpad register and read/compare values again
+        //this validates APB read
+        wval = ~wval & 0xff;
+        Vabp_uart16550:uart16550_poke(PEEK_SCR, wval);
+        apbMaster->read(SCR, rval);
+        while (!apbMaster->done()) tick();
+        Vapb_uart16550::uart16550_release(PEEK_SCR);
+
+        if (rval != wval)
+        {
+            std::cout << std::endl << "ERROR: poked:" << std::hex << unsigned(wval) << " received:" << std::hex << unsigned(rval);
+            error |= true;
+        }
+
+        //Final 'okay' message (if all goes well)
+        if (!error)
+        {
+            std::cout << "ok" << std::endl;
         }
         else
         {
-            std::cout << "ok" << std::endl;
+            std::cout << std::endl;
         }
     }
 }
