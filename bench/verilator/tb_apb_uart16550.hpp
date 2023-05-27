@@ -26,38 +26,84 @@
 #include <buffer.hpp>
 
 //165550 Register Definitions
-#define RBR 0x0
-#define THR 0x0
-#define IER 0x1
-#define IIR 0x2
-#define FCR 0x2
-#define LCR 0x3
-#define MCR 0x4
-#define LSR 0x5
-#define MSR 0x6
-#define SCR 0x7
-#define DLL 0x0
-#define DLM 0x1
+#define RBR          0x0
+#define THR          0x0
+#define IER          0x1
+#define IIR          0x2
+#define FCR          0x2
+#define LCR          0x3
+#define MCR          0x4
+#define LSR          0x5
+#define MSR          0x6
+#define SCR          0x7
+#define DLL          0x0
+#define DLM          0x1
 
-#define PEEK_RBR 0x00
-#define PEEK_THR 0x00
-#define PEEK_IER 0x01
-#define PEEK_IIR 0x02
-#define PEEK_FCR 0x12
-#define PEEK_LCR 0x03
-#define PEEK_MCR 0x04
-#define PEEK_LSR 0x05
-#define PEEK_MSR 0x06
-#define PEEK_SCR 0x07
-#define PEEK_DLL 0x20
-#define PEEK_DLM 0x21
+#define PEEK_RBR     0x00
+#define PEEK_THR     0x00
+#define PEEK_IER     0x01
+#define PEEK_IIR     0x02
+#define PEEK_FCR     0x12
+#define PEEK_LCR     0x03
+#define PEEK_MCR     0x04
+#define PEEK_LSR     0x05
+#define PEEK_MSR     0x06
+#define PEEK_SCR     0x07
+#define PEEK_DLL     0x20
+#define PEEK_DLM     0x21
 
 
 //IER register definitions
-#define ERBF  0x01
-#define ETBEI 0x02
-#define ELSI  0x04
-#define EDSSI 0x08
+#define ERBF         0x01
+#define ETBEI        0x02
+#define ELSI         0x04
+#define EDSSI        0x08
+
+//IIR register definitions
+#define IP           0x01
+
+//FCR register definitions
+#define FIFO_ENABLE  0x01
+#define RXFIFO_RST   0x02
+#define TXFIFO_RST   0x04
+#define DMA_MODE     0x08
+
+//LCR register definitions
+#define WLS          0x03
+#define STB          0x04
+#define PEN          0x08
+#define EPS          0x10
+#define STICK        0x20
+#define BREAK        0x40
+#define DLAB         0x80
+
+//MCR register definitions
+#define DTR          0x01
+#define RTS          0x02
+#define OUT1         0x04
+#define OUT2         0x08
+#define LOOP         0x10
+
+//LSR register definitions
+#define DR           0x01
+#define OE           0x02
+#define PE           0x04
+#define FE           0x08
+#define BI           0x10
+#define THRE         0x20
+#define TEMT         0x40
+#define RXFIFO_ERROR 0x80
+
+//MSR register definitions
+#define DCTS         0x01
+#define DDSR         0x02
+#define TERI         0x04
+#define DDCD         0x08
+#define CTS          0x10
+#define DSR          0x20
+#define RI           0x40
+#define DCD          0x80
+
 
 
 class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart16550>
@@ -73,7 +119,16 @@ class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart1
         //destructor
         ~cAPBUart16550TestBench();
 
+        void    poke (uint8_t reg, uint8_t val);
+        uint8_t peek (uint8_t reg) const;
+        void    release (uint8_t reg);
+        bool    equal (uint8_t reg, uint8_t val) const;
+
         void APBIdle(unsigned duration=1);
         void APBReset(unsigned duration=1);
+
         void scratchpadTest(unsigned runs=1);
+
+        void setBaudRate(unsigned baudrate);
+
 };

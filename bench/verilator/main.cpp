@@ -27,6 +27,9 @@ int main(int argc, char **argv)
 {
     const std::unique_ptr<VerilatedContext> contextp(new VerilatedContext);
 
+    const unsigned int baudrate = 19200;
+
+
     //Pass arguments to Verilated code
     contextp->commandArgs(argc, argv);
 
@@ -45,8 +48,11 @@ int main(int argc, char **argv)
     //run scratchpad test
     testbench->scratchpadTest(10);
 
+    //program baudrate
+    testbench->setBaudRate(baudrate);
+    
     //Idle APB bus
-    testbench->APBIdle(10);
+    testbench->APBIdle(1000);
 
     //destroy testbench
     delete testbench;

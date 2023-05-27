@@ -40,7 +40,9 @@ using namespace RoaLogic::testbench::clock::units;
 using RoaLogic::common::ringbuffer;
 using RoaLogic::bus::cBusAPB4;
 
-//Constructor
+/**
+ * @brief Constructor
+ */
 cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) : 
     cTestBench<Vapb_uart16550>(context)
 {
@@ -68,29 +70,161 @@ cAPBUart16550TestBench::cAPBUart16550TestBench(VerilatedContext* context) :
                            _core->PSLVERR);
 } 
 
-//Destructor
+/*
+ * @brief Destructor
+ */
 cAPBUart16550TestBench::~cAPBUart16550TestBench()
 {
-  //destroy transaction buffer
-  delete transactionBuffer;
+    //destroy transaction buffer
+    delete transactionBuffer;
 }
 
 
+/**
+ * @brief poke 16550 CSRs
+ *
+ * @param reg Register to poke (set value)
+ * @param val Value to set register to
+ */
+void cAPBUart16550TestBench::poke(uint8_t reg, uint8_t val)
+{
+    Vapb_uart16550::uart16550_poke(reg, val);
+}
+
+
+/**
+ * @brief Release 'force' from register. Use after 'poke'
+ *
+ * @param reg Register to release from poke
+ */
+void cAPBUart16550TestBench::release(uint8_t reg)
+{
+    Vapb_uart16550::uart16550_release(reg);
+}
+
+/**
+ * @brief peek 16550 CSRs
+ *
+ * @param reg Register to peek (get value)
+ * @return Register content
+ */
+uint8_t cAPBUart16550TestBench::peek (uint8_t reg) const
+{
+    return Vapb_uart16550::uart16550_peek(reg);
+}
+
+
+//TODO print error message
+/**
+ * @brief Compare 16550 CSR
+ *
+ * @param reg Register to compare
+ * @param val Value to compare with register contents
+ * @return True if values are equal, false otherwise
+ */
+bool cAPBUart16550TestBench::equal(uint8_t reg, uint8_t val) const
+{
+    return peek(reg) == val;
+}
+
+
+/**
+ * @brief Run APB Idle Cycles
+ *
+ * @param duration The number of idle cycles to execute
+ */
 void cAPBUart16550TestBench::APBIdle(unsigned duration)
 {
-  apbMaster->idle(duration);
-  while (!apbMaster->done()) tick();
+    apbMaster->idle(duration);
+    while (!apbMaster->done()) tick();
 
-  std::cout << "APB Bus Idle" << std::endl;
+    std::cout << "APB Bus Idle" << std::endl;
 }
 
 
+/**
+ * @brief Reset APB bus
+ *
+ * @param duration The number of cycles to assert PRESETn (i.e. PRESET=0)
+ */
 void cAPBUart16550TestBench::APBReset(unsigned duration)
 {
-  apbMaster->reset(duration);
-  while (!apbMaster->done()) tick();
+    apbMaster->reset(duration);
+    while (!apbMaster->done()) tick();
 
-  std::cout << "APB Bus Reset" << std::endl;
+    std::cout << "APB Bus Reset" << std::endl;
+}
+
+
+/**
+ * @brief Program 16550 baud rate
+ *
+ * @param baudrate The baud rate to configure the 16550 to
+ */
+void cAPBUart16550TestBench::setBaudRate(unsigned baudrate)
+{
+    uint8_t wval, peekval;
+
+    // divisor depends on APB clock frequency
+    long double apbClockFrequency = pclk -> getFrequency();
+
+    // divisor for baudrate
+    unsigned divisor = apbClockFrequency / baudrate;
+
+    // Decimal divisor is 16x baudrate
+    divisor /= 16;
+
+    // set DLAB=1
+    apbMaster->read(LCR, wval);
+    while (!apbMaster->done()) tick();
+    wval |= DLAB;
+    apbMaster->write(LCR, wval);
+    while (!apbMaster->done()) tick();
+
+    //verify value is written
+    peekval = peek(PEEK_LCR);
+    if (peekval != wval)
+    {
+        std::cout << "ERROR: written:" << std::hex << unsigned(wval) << " peeked:" << std::hex << unsigned(peekval) << std::endl;
+    }
+
+    // Program divisor LSB
+    wval = divisor & 0xff;
+    apbMaster->write(DLL, wval);
+    while (!apbMaster->done()) tick();
+
+    //verify value is written
+    peekval = peek(PEEK_DLL);
+    if (peekval != wval)
+    {
+        std::cout << "ERROR: written:" << std::hex << unsigned(wval) << " peeked:" << std::hex << unsigned(peekval) << std::endl;
+    }
+
+    // Program divisor MSB
+    wval = (divisor >> 8) & 0xff;
+    apbMaster->write(DLM, wval);
+    while (!apbMaster->done()) tick();
+
+    //verify value is written
+    peekval = peek(PEEK_DLM);
+    if (peekval != wval)
+    {
+        std::cout << "ERROR: written:" << std::hex << unsigned(wval) << " peeked:" << std::hex << unsigned(peekval) << std::endl;
+    }
+
+    // set DLAB=0
+    apbMaster->read(LCR, wval);
+    while (!apbMaster->done()) tick();
+    wval |= DLAB;
+    apbMaster->write(LCR, wval);
+    while (!apbMaster->done()) tick();
+
+    //verify value is written
+    peekval = peek(PEEK_LCR);
+    if (peekval != wval)
+    {
+        std::cout << "ERROR: written:" << std::hex << unsigned(wval) << " peeked:" << std::hex << unsigned(peekval) << std::endl;
+    }
 }
 
 
@@ -118,12 +252,10 @@ void cAPBUart16550TestBench::scratchpadTest (unsigned runs)
         apbMaster->write(SCR, wval);
         while (!apbMaster->done()) tick();
 
-        //get register value from Verilog
-        peekval = Vapb_uart16550::uart16550_peek(PEEK_SCR);
-
         //compare write value with register content
         //this validates APB write
-        if (wval != peekval)
+        peekval = peek(PEEK_SCR);
+        if (peekval != wval)
         {
             std::cout << std::endl << "ERROR: written:" << std::hex << unsigned(wval) << " peeked:" << std::hex << unsigned(peekval);
             error |= true;
@@ -143,10 +275,10 @@ void cAPBUart16550TestBench::scratchpadTest (unsigned runs)
         //break content in the scratchpad register and read/compare values again
         //this validates APB read
         wval = ~wval & 0xff;
-        Vabp_uart16550:uart16550_poke(PEEK_SCR, wval);
+        poke(PEEK_SCR, wval);
         apbMaster->read(SCR, rval);
         while (!apbMaster->done()) tick();
-        Vapb_uart16550::uart16550_release(PEEK_SCR);
+        release(PEEK_SCR);
 
         if (rval != wval)
         {
@@ -166,6 +298,11 @@ void cAPBUart16550TestBench::scratchpadTest (unsigned runs)
     }
 }
 
+
+/*
+   Create method to program baudrate
+   Create method to program control register
+ */
 
 
 
