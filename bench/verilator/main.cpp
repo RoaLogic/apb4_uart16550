@@ -51,8 +51,18 @@ int main(int argc, char **argv)
     //program baudrate
     testbench->setBaudRate(baudrate);
     
+    //Program data format
+    testbench->setFormat(8,1,oddParity);
+
+    //write data
+    testbench->sendByte(0xDE);
+    testbench->sendByte(0xAD);
+    testbench->sendByte(0xBE);
+    testbench->sendByte(0xEF);
+
+
     //Idle APB bus
-    testbench->APBIdle(1000);
+    testbench->APBIdle(100000);
 
     //destroy testbench
     delete testbench;

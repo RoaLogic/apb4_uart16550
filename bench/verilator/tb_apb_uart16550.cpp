@@ -299,42 +299,61 @@ void cAPBUart16550TestBench::scratchpadTest (unsigned runs)
 }
 
 
-/*
-   Create method to program baudrate
-   Create method to program control register
+/**
+ * @brief Program serial data format
+ *
+ * @param wordLength Number of databits; 5,6,7, or 8
+ * @param stopBits   Number of stop bits; either 1 or 2
+ * @param parity     Parity; either none, odd, or even
  */
-
-
-
-/*
-//Test1
-clockedTest_t cAPBUart16550TestBench::test1()
+void cAPBUart16550TestBench::setFormat(uint8_t wordLength, uint8_t stopBits, parity_t parity)
 {
-    waitPosedge(pclk);
-    _core->PWDATA = 1;
+    uint8_t val;
 
-    for (int i=0; i < 10; i++)
+    //verify wordLength is valid
+    assert (wordLength >= 5 && wordLength <= 8);
+
+    //verify stopBits is valid
+    assert (stopBits > 0 && stopBits <= 2);
+
+    //get current value of Line Control Register
+    apbMaster->read(LCR, val);
+    while (!apbMaster->done()) tick();
+
+    //clear LSBs
+    val &= 0xE0;
+
+    //program control register
+    val |= (wordLength -5) | ((stopBits-1) >> 2) | parity;
+    apbMaster->write(LCR, val);
+    while (!apbMaster->done()) tick();
+}
+
+
+/**
+ * @brief Send data byte
+ *
+ * @param data Data byte to send
+ */
+void cAPBUart16550TestBench::sendByte(uint8_t data)
+{
+    uint8_t val, regval;
+
+    //wait until THRE
+    do {
+        apbMaster->read(LSR, val);
+        while (!apbMaster->done()) tick();
+    } while ( !(val & THRE) );
+
+    //write to THR
+    apbMaster->write(THR, data);
+    while (!apbMaster->done()) tick();
+
+    //THRE should be '0' now
+    regval = peek(LSR);
+    if (regval & THRE)
     {
-        std::cout << "In test1" << std::endl;
-
-        waitPosedge(pclk);
-        _core->PWDATA++;
+        std::cout << "Peeked LSR, expected THRE cleared, but found set" << std::endl;
     }
 }
 
-
-//Test2
-clockedTest_t cAPBUart16550TestBench::test2()
-{
-  waitPosedge(tmp_clk1);
-  _core->PADDR = 0;
-
-  for (int i=0; i < 10; i++)
-  {
-    std::cout << "In test2" << std::endl;
-
-    waitPosedge(tmp_clk1);
-    _core->PADDR++;
-  }
-}
-*/

@@ -12,6 +12,9 @@
 //For std::unique_ptr
 #include <memory>
 
+//For assertions
+#include <cassert>
+
 //Include common routines
 #include <testbench.hpp>
 
@@ -105,6 +108,12 @@
 #define DCD          0x80
 
 
+typedef enum {
+             noneParity = 0x00,
+             oddParity  = 0x08,
+             evenParity = 0x18
+           } parity_t;
+
 
 class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart16550>
 {
@@ -130,5 +139,6 @@ class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart1
         void scratchpadTest(unsigned runs=1);
 
         void setBaudRate(unsigned baudrate);
-
+        void setFormat(uint8_t wordLength, uint8_t stopBits, parity_t parity);
+        void sendByte(uint8_t val);
 };
