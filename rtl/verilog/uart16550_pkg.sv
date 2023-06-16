@@ -44,7 +44,7 @@ package uart16550_pkg;
    * CSR location 
    */
   localparam [2:0] RBR_ADR = 3'h0;
-  localparam [2:0] THR_ADR = 3'h1;
+  localparam [2:0] THR_ADR = 3'h0;
   localparam [2:0] IER_ADR = 3'h1;
   localparam [2:0] IIR_ADR = 3'h2;
   localparam [2:0] FCR_ADR = 3'h2;
