@@ -18,13 +18,23 @@ using namespace RoaLogic::common;
 //Legacy function required only so linking works on Cygwin and MSVC++ and MacOS
 double sc_time_stamp() { return 0; }
 
+void getScope()
+{
+std::cout << "Called getScope()" << std::endl;
+    svScope scope = svGetScope();
+    const char* scopeName = svGetNameFromScope(scope);
+
+    std::cout << "ScopeName:" << scopeName << std::endl;
+}
 
 
-
-int main(int argc, char* argv[])
+int main(int argc, char **argv)
 {
     cProgramOptions programOptions;    
     const std::unique_ptr<VerilatedContext> contextp(new VerilatedContext);
+
+    const unsigned int baudrate = 19200;
+
 
     cNoValueOption helpOption("h", "help", "Show this help and exit", false);
     cValueOption<std::string> logOption("l", "log", "Log file path, when not specified log is written to terminal");
@@ -74,27 +84,33 @@ int main(int argc, char* argv[])
     //Create model for DUT
     cAPBUart16550TestBench* testbench = new cAPBUart16550TestBench(contextp.get());
 
+
     testbench->opentrace("waveform.vcd");
 
-    /* Need handles to tests
-     * These are like statics. The actual object is destroyed immediately after generation,
-     * but the handle stays alive
-     * if we do:
-     *    while (testbench->test1()) testbench->tick();
-     * we get a segfault on the 2nd while(), because the object gets immediately destroyed.
-     */
+    //Idle APB bus
+    testbench->APBIdle(2);
 
-    //wait 100 cycles
-    auto waitFor100PCLKCycles = testbench->waitFor(testbench->pclk, 100);
-    while (waitFor100PCLKCycles) testbench->tick();
+    //run APB Reset test
+    testbench->APBReset(3);
 
-    //Simulate the design until test1 finishes
-    auto test1 = testbench->test1();
-    auto test2 = testbench->test2();
-    while (test1 || test2) testbench->tick();
+    //run scratchpad test
+    testbench->scratchpadTest(10);
 
-    //run some more cycles
-    while (waitFor100PCLKCycles) testbench->tick();
+    //program baudrate
+    testbench->setBaudRate(baudrate);
+    
+    //Program data format
+    testbench->setFormat(8,1,oddParity);
+
+    //write data
+    testbench->sendByte(0xDE);
+    testbench->sendByte(0xAD);
+    testbench->sendByte(0xBE);
+    testbench->sendByte(0xEF);
+
+
+    //Idle APB bus
+    testbench->APBIdle(100000);
 
     //destroy testbench
     delete testbench;
