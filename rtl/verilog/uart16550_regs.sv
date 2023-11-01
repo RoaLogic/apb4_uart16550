@@ -149,6 +149,7 @@ import uart16550_pkg::*;
   //
   // Functions
   //
+`ifdef VERILATOR
   import "DPI-C" context function void getScope();
   initial getScope();
 
@@ -222,7 +223,7 @@ import uart16550_pkg::*;
       endcase
   end
   endtask
-
+`endif
 
   //////////////////////////////////////////////////////////////////
   //
