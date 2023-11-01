@@ -128,7 +128,7 @@ import uart16550_pkg::*;
               //wait until there's data in the Tx FIFO/Register and the stop-bit has been trasmitted
               ST_IDLE : if (~|cnt)
                         begin
-                            if (!csr.lsr.thre)
+                            if (!csr_i.lsr.thre)
                             begin
                                 state      <= ST_START; 
 
@@ -136,7 +136,7 @@ import uart16550_pkg::*;
                                 sr         <= d_i;                                 //store databyte in shiftregister
                                 sr_empty_o <= 1'b0;
 
-                                case (csr.lcr.wls)
+                                case (csr_i.lcr.wls)
                                   wls_5bits: data_parity <= ^d_i[4:0];
                                   wls_6bits: data_parity <= ^d_i[5:0];
                                   wls_7bits: data_parity <= ^d_i[6:0];
