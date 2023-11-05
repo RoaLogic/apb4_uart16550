@@ -66,7 +66,7 @@ package uart16550_pkg;
     logic       edssi;             //Enable Modem Status Interrupt
     logic       elsi;              //Enable Receiver Line Status Interrupt
     logic       etbei;             //Enable Transmitter Holding Register Empty Interrupt
-    logic       erbfi;             //Enable Received Data Available Interrupt
+    logic       erbi;              //Enable Received Data Available Interrupt
   } ier_t; //Interrupt Enable Register
 
   typedef struct packed {
