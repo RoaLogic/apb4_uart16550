@@ -339,7 +339,7 @@ import uart16550_pkg::*;
 
   //LCR Line Control Register
   always @(posedge clk_i, negedge rst_ni)
-    if      (!rst_ni                  ) csr.lcr <= 8'h00;
+    if      (!rst_ni                  ) csr.lcr <= {3'h0,EPS_RESET_VALUE,PEN_RESET_VALUE,STB_RESET_VALUE,WLS_RESET_VALUE};
     else if ( we_i && adr_i == LCR_ADR) csr.lcr <= d_i;
 
 

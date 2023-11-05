@@ -182,6 +182,7 @@ import uart16550_pkg::*;
    */
   uart16550_regs #(
     .DL_RESET_VALUE   ( DL_RESET_VALUE  ),
+    .WLS_RESET_VALUE  ( WLS_RESET_VALUE ),
     .STB_RESET_VALUE  ( STB_RESET_VALUE ),
     .PEN_RESET_VALUE  ( PEN_RESET_VALUE ),
     .EPS_RESET_VALUE  ( EPS_RESET_VALUE ) )
