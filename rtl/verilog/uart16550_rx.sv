@@ -125,7 +125,10 @@ import uart16550_pkg::*;
         state  <= ST_IDLE;
         cnt    <= {$bits(cnt   ){1'bx}};       //don't care
         bitcnt <= {$bits(bitcnt){1'bx}};       //don't care
-        q_o    <= {$bits(q_o   ){1'bx}};       //don't care
+        q_o.d  <= 8'hx;                        //don't care
+        q_o.fe <= 1'b0;                        //no framing error
+        q_o.bi <= 1'b0;                        //no break interrupt
+        q_o.pe <= 1'b0;                        //no parity error
         push_o <= 1'b0;
     end
     else
