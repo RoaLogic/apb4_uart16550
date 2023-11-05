@@ -82,11 +82,11 @@
  * ------------------------------------------------------------------------------------------------------------------------------+
  * 0x0  R  Receive Buffer Register    RBR  Databit7 | Databit6 | Databit5 | Databit4 | Databit3 | Databit2 | Databit1 | Databit0 |
  * 0x0  W  Transmit Holding Register  THR  Databit7 | Databit6 | Databit5 | Databit4 | Databit3 | Databit2 | Databit1 | Databit0 |
- * 0x1  RW Interrupt Enable Register  IER  0        | 0        | 0        | 0        | EDSSI    | ELSI     | ETBEI    | ERFBI    |
+ * 0x1  RW Interrupt Enable Register  IER  0        | 0        | 0        | 0        | EDSSI    | ELSI     | ETBEI    | EFBI     |
  * 0x2  R  Interrupt Ident Register   IIR  FIFOs En | FIFOs En | 0        | 0        | IIDbit2  | IIDbit1  | IIDbit0  | IntPend  |
  * 0x2  W  FIFO Control Register      FCR  RxTrig1  | RxTrig0  | reserved | reserved | DMA Mode | TxFIFORst| RxFIFORst| FIFO Ena |
  * 0x3  RW Line Control Register      LCR  DLAB     | Set Break| StkParity| EPS      | PEN      | STB      | WLS1     | WLS0     |
- * 0x4  RW Modem Control Register     MCR  0        | 0        | 0        | Loop     | Out2     | Out1     | RTS      | DTR      |
+ * 0x4  RW Modem Control Register     MCR  0        | 0        | AFE      | Loop     | Out2     | Out1     | RTS      | DTR      |
  * 0x5  R  Line Status Register       LSR  RxFIFOErr| TEMT     | THRE     | BI       | FE       | PE       | OE       | DR       |
  * 0x6  R  Modem Status Register      MSR  DCD      | RI       | DSR      | CTS      | DDCD     | TERI     | DDSR     | DCTS     |
  * 0x7  RW Scratchpad Register        SCR  Bit7     | Bit6     | Bit5     | Bit4     | Bit3     | Bit2     | Bit1     | Bit0     |
@@ -98,6 +98,13 @@
 
 module uart16550_regs
 import uart16550_pkg::*;
+#(
+  parameter [15:0] DL_RESET_VALUE  = 16'h44,
+  parameter [ 1:0] WLS_RESET_VALUE =  2'b00,
+  parameter        STB_RESET_VALUE =  1'b0,
+  parameter        PEN_RESET_VALUE =  1'b0,
+  parameter        EPS_RESET_VALUE =  1'b0
+)
 (
   input  logic       rst_ni,
   input  logic       clk_i,
@@ -350,16 +357,20 @@ import uart16550_pkg::*;
 
 
   //DLL Divisor Latch LSB Register
-  //Not affected by MR (Master Reset = rst_ni)
-  always @(posedge clk_i)
-    if ( we_i && adr_i == DLL_ADR &&
+  //Per spec not affected by MR (Master Reset = rst_ni), which doesn't make
+  //much sense for an IP
+  always @(posedge clk_i, negedge rst_ni)
+    if      (!rst_ni             ) dl.dll <= DL_RESET_VALUE[7:0];
+    else if ( we_i && adr_i == DLL_ADR &&
          csr.lcr.dlab            ) dl.dll <= d_i;
 
 
   //DLM Divisor Latch MSB Register
-  //Not affected by MR (Master Reset = rst_ni)
-  always @(posedge clk_i)
-    if ( we_i && adr_i == DLM_ADR &&
+  //Per spec not affected by MR (Master Reset = rst_ni), which doesn't make
+  //much sense for an IP
+  always @(posedge clk_i, negedge rst_ni)
+    if      (!rst_ni             ) dl.dlm <= DL_RESET_VALUE[15:8];
+    else if ( we_i && adr_i == DLM_ADR &&
          csr.lcr.dlab            ) dl.dlm <= d_i;
 
 
@@ -378,6 +389,7 @@ import uart16550_pkg::*;
       LSR_ADR : q_o <= csr.lsr;
       MSR_ADR : q_o <= csr.msr;
       SCR_ADR : q_o <= csr.scr;
+      default : q_o <= 8'hx;
     endcase
 
   //some MSR bits are cleared upon reading MSR
@@ -466,7 +478,7 @@ import uart16550_pkg::*;
     else         irq_o <= (csr.ier.edssi & |csr.msr[3:0]) |                //Modem Status Interrupt
                           (csr.ier.elsi  & |csr.lsr[4:1]) |                //Line Status Interrupt
                           (csr.ier.etbei &  csr.lsr.thre) |                //Transmit Holding Register Empty Interrupt
-                          (csr.ier.erbfi & (csr.fcr.ena ? rx_trigger_i
+                          (csr.ier.erbi  & (csr.fcr.ena ? rx_trigger_i
                                                         : csr.lsr.dr) );   //Received Data Available Interrupt
 
   /*
@@ -495,7 +507,7 @@ import uart16550_pkg::*;
     if (!rst_ni)
       baud_cnt  <= 16'h0;
     else if (ld_baud_cnt || ~|baud_cnt)
-      baud_cnt <= dl;
+      baud_cnt <= dl -1;
     else
       baud_cnt <= baud_cnt -1;
 

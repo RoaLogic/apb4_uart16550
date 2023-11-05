@@ -85,7 +85,12 @@
 module apb_uart16550
 import uart16550_pkg::*;
 #(
-  parameter int FIFO_DEPTH = 16
+  parameter int      FIFO_DEPTH      = 16,
+  parameter [15:0]   DL_RESET_VALUE  = 16'ha3, //9600baud @25MHa
+  parameter [ 1:0]   WLS_RESET_VALUE =  2'b11, //8bits
+  parameter          STB_RESET_VALUE =  1'b0,  //1stop bit
+  parameter          PEN_RESET_VALUE =  1'b0,  //no parity
+  parameter          EPS_RESET_VALUE =  1'b0
 )
 (
   input  logic       PRESETn,
@@ -171,54 +176,56 @@ import uart16550_pkg::*;
   assign apb_read  = PSEL & PENABLE & ~PWRITE;
   assign apb_write = PSEL & PENABLE &  PWRITE;
 
-  logic  clk_i = PCLK;
-  logic  rst_ni = PRESETn;
-
 
   /*
    * Hookup Registers
    */
-  uart16550_regs regs (
-    .rst_ni           ( rst_ni        ),
-    .clk_i            ( clk_i         ),
+  uart16550_regs #(
+    .DL_RESET_VALUE   ( DL_RESET_VALUE  ),
+    .STB_RESET_VALUE  ( STB_RESET_VALUE ),
+    .PEN_RESET_VALUE  ( PEN_RESET_VALUE ),
+    .EPS_RESET_VALUE  ( EPS_RESET_VALUE ) )
+  regs (
+    .rst_ni           ( PRESETn         ),
+    .clk_i            ( PCLK            ),
 
-    .adr_i            ( PADDR         ),
-    .d_i              ( PWDATA        ),
-    .q_o              ( PRDATA        ),
-    .re_i             ( apb_read      ),
-    .we_i             ( apb_write     ),
+    .adr_i            ( PADDR           ),
+    .d_i              ( PWDATA          ),
+    .q_o              ( PRDATA          ),
+    .re_i             ( apb_read        ),
+    .we_i             ( apb_write       ),
 
-    .csr_o            ( csr           ),
+    .csr_o            ( csr             ),
 
-    .baudout_o        ( baudout_no    ),
-    .rts_no           ( rts_no        ),
-    .cts_ni           ( cts_ni        ),
-    .dtr_no           ( dtr_no        ),
-    .dsr_ni           ( dsr_ni        ),
-    .dcd_ni           ( dcd_ni        ),
-    .ri_ni            ( ri_ni         ),
+    .baudout_o        ( baudout_no      ),
+    .rts_no           ( rts_no          ),
+    .cts_ni           ( cts_ni          ),
+    .dtr_no           ( dtr_no          ),
+    .dsr_ni           ( dsr_ni          ),
+    .dcd_ni           ( dcd_ni          ),
+    .ri_ni            ( ri_ni           ),
 
-    .txrdy_no         ( txrdy_no      ),
-    .rxrdy_no         ( rxrdy_no      ),
+    .txrdy_no         ( txrdy_no        ),
+    .rxrdy_no         ( rxrdy_no        ),
 
-    .out1_no          ( out1_no       ),
-    .out2_no          ( out2_no       ),
+    .out1_no          ( out1_no         ),
+    .out2_no          ( out2_no         ),
 
-    .irq_o            ( intr_o        ),
+    .irq_o            ( intr_o          ),
 
     //Tx signals
-    .tx_empty_i       ( tx_empty      ),
-    .tx_push_o        ( tx_push       ),
-    .tx_sr_empty_i    ( tx_sr_empty   ),
+    .tx_empty_i       ( tx_empty        ),
+    .tx_push_o        ( tx_push         ),
+    .tx_sr_empty_i    ( tx_sr_empty     ),
 
     //Rx signals
-    .rx_empty_i       ( rx_empty      ),
-    .rx_pop_o         ( rx_pop        ),
-    .rx_q_i           ( rx_q          ),
-    .overrun_error_i  ( rx_overrun    ),
-    .rx_fifo_error_i  ( rx_fifo_error ),
-    .rx_trigger_lvl_o ( rx_trigger_lvl ),
-    .rx_trigger_i     ( rx_trigger     ));
+    .rx_empty_i       ( rx_empty        ),
+    .rx_pop_o         ( rx_pop          ),
+    .rx_q_i           ( rx_q            ),
+    .overrun_error_i  ( rx_overrun      ),
+    .rx_fifo_error_i  ( rx_fifo_error   ),
+    .rx_trigger_lvl_o ( rx_trigger_lvl  ),
+    .rx_trigger_i     ( rx_trigger      ));
 
 
   /*
@@ -228,8 +235,8 @@ import uart16550_pkg::*;
     .DATA_WIDTH    ( 8              ),
     .FIFO_DEPTH    ( FIFO_DEPTH     ))
   tx_fifo (
-    .rst_ni        ( rst_ni         ),
-    .clk_i         ( clk_i          ),
+    .rst_ni        ( PRESETn        ),
+    .clk_i         ( PCLK           ),
 
     .rst_i         ( csr.fcr.tx_rst ),
     .ena_i         ( csr.fcr.ena    ),
@@ -253,8 +260,8 @@ import uart16550_pkg::*;
    */
   uart16550_tx
   tx (
-    .rst_ni     ( rst_ni      ),
-    .clk_i      ( clk_i       ),
+    .rst_ni     ( PRESETn     ),
+    .clk_i      ( PCLK        ),
 
     .baudout_i  ( baudout_no  ),
     .csr_i      ( csr         ),
@@ -269,8 +276,8 @@ import uart16550_pkg::*;
    */
   uart16550_rx
   rx (
-    .rst_ni    ( rst_ni     ),
-    .clk_i     ( clk_i      ),
+    .rst_ni    ( PRESETn    ),
+    .clk_i     ( PCLK       ),
 
     .baudout_i ( baudout_no ),
     .csr_i     ( csr        ),
@@ -286,8 +293,8 @@ import uart16550_pkg::*;
     .DATA_WIDTH   ( $bits(rx_d_t)   ),
     .FIFO_DEPTH   ( FIFO_DEPTH      ))
   rx_fifo (
-    .rst_ni        ( rst_ni         ),
-    .clk_i         ( clk_i          ),
+    .rst_ni        ( PRESETn        ),
+    .clk_i         ( PCLK           ),
 
     .rst_i         ( csr.fcr.rx_rst ),
     .ena_i         ( csr.fcr.ena    ),
