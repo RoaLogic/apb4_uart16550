@@ -159,7 +159,6 @@ import uart16550_pkg::*;
                              //first databit to transfer
                              //Transfer LSB first
                              sr     <= sr >> 1;
-                             bitcnt <= bitcnt -1;
 
                              sout   <= sr[0];
                              cnt    <= 5'd15;                                      //data bit is 16 baudout cycles
