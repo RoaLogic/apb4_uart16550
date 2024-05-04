@@ -1,59 +1,138 @@
-/**
- * @file main.cpp
- * @author B.Schouteten
- * @brief 
- * @version 0.1
- * @date 2023-04-30
- * 
- * @copyright Copyright (c) 2023
- * 
- */
-#include <tb_apb_uart16550.hpp>
-//#include <programoptions.hpp>
-#include <valueOption.hpp>
+/////////////////////////////////////////////////////////////////////
+//   ,------.                    ,--.                ,--.          //
+//   |  .--. ' ,---.  ,--,--.    |  |    ,---. ,---. `--' ,---.    //
+//   |  '--'.'| .-. |' ,-.  |    |  |   | .-. | .-. |,--.| .--'    //
+//   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
+//   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
+//                                             `---'               //
+//    Main.cpp                                                     //
+//                                                                 //
+/////////////////////////////////////////////////////////////////////
+//                                                                 //
+//             Copyright (C) 2024 Roa Logic BV                     //
+//             www.roalogic.com                                    //
+//                                                                 //
+//     This source file may be used and distributed without        //
+//   restriction provided that this copyright statement is not     //
+//   removed from the file and that any derivative work contains   //
+//   the original copyright notice and the associated disclaimer.  //
+//                                                                 //
+//      THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY        //
+//   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED     //
+//   TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS     //
+//   FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL THE AUTHOR        //
+//   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,           //
+//   INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES      //
+//   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE     //
+//   GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR          //
+//   BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    //
+//   LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT    //
+//   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT    //
+//   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE           //
+//   POSSIBILITY OF SUCH DAMAGE.                                   //
+//                                                                 //
+/////////////////////////////////////////////////////////////////////
+
+#include "tb_apb_uart16550.hpp"
+
 #include <noValueOption.hpp>
+#include <valueOption.hpp>
 
-using namespace RoaLogic::common;
+using namespace RoaLogic;
+using namespace common;
+using namespace testbench;
+using namespace tasks;
 
-//Legacy function required only so linking works on Cygwin and MSVC++ and MacOS
-double sc_time_stamp() { return 0; }
+cProgramOptions programOptions;
 
-void getScope()
+cNoValueOption helpOption("h", "help", "Show this help and exit", false);
+cNoValueOption traceOption("t", "trace", "Trace option, is given the trace will be enabled", false);
+cValueOption<std::string> logOption("l", "log", "Log file path, when not specified log is written to terminal");    
+cValueOption<uint8_t> logPriorityOption("p", "priority", "Log priority. Debug = 0, Log = 1, Info = 2, Warning = 3, Error = 4, Fatal = 5");
+
+int setupProgramOptions(int argc, char** argv);
+void setupLogger(void);
+
+int main(int argc, char** argv) 
 {
-std::cout << "Called getScope()" << std::endl;
-    svScope scope = svGetScope();
-    const char* scopeName = svGetNameFromScope(scope);
+    bool withTrace = false;
+    // First setup the program options and followed by this setup the logger module
+    if(setupProgramOptions(argc, argv))
+    {
+        return 0;
+    }
 
-    std::cout << "ScopeName:" << scopeName << std::endl;
+    setupLogger();
+
+    withTrace = traceOption.isSet();
+
+    // Now let's setup our testbench
+    std::unique_ptr<VerilatedContext> contextp(new VerilatedContext);
+    contextp->commandArgs(argc, argv); // Parse the eventual option for verilator
+    //Create model for DUT
+    cAPBUart16550TestBench* testbench = new cAPBUart16550TestBench(contextp.get(), withTrace);
+
+    // Open the trace if this is enabled
+    if(withTrace)
+    {
+        testbench->opentrace("waveform.vcd");
+    }
+
+    // Run the testbench for 20 cycles
+    testbench->run();
+
+    // finalize the design
+    delete testbench;
+
+    // Close the log
+    cLog::getInstance()->close();
+
+    return 0;
 }
 
-
-int main(int argc, char **argv)
+/**
+ * @brief Function to setup the program options for this main file
+ * @details this function sets the program options, parses the given
+ * parameters and then checks some initial program options
+ * 
+ * @param argc 
+ * @param argv 
+ * @return 0  continue execution
+ * @return >0 Stop program 
+ */
+int setupProgramOptions(int argc, char** argv)
 {
-    cProgramOptions programOptions;    
-    const std::unique_ptr<VerilatedContext> contextp(new VerilatedContext);
-
-    const unsigned int baudrate = 19200;
-
-
-    cNoValueOption helpOption("h", "help", "Show this help and exit", false);
-    cValueOption<std::string> logOption("l", "log", "Log file path, when not specified log is written to terminal");
-    cValueOption<bool> boolOption("b", "bool", "Test for boolean, defaults to false. Option could be '1', true, True or TRUE");
-    cValueOption<uint8_t> logPriorityOption("p", "priority", "Log priority. Debug = 0, Log = 1, Info = 2, Warning = 3, Error = 4, Fatal = 5");
-    uint8_t logPriority = 0;
-    
     programOptions.add(&helpOption);
+    programOptions.add(&traceOption);
     programOptions.add(&logOption);
     programOptions.add(&logPriorityOption);
-    programOptions.add(&boolOption);
-    
+
     programOptions.parse(argc, argv);
 
     if(helpOption.isSet())
     {
         programOptions.printKnownOptions();
-        return 0;
+        return 1;
     }
+
+    return 0;
+}
+
+/**
+ * @brief Function to setup the logger
+ * @details This function sets the logger up.
+ * It checks if the priority option is set and gets the value,
+ * if it's not set it will be by default INFO.
+ * 
+ * When the logOption is set, the file path will be selected. 
+ * In other cases it will use the terminal for output.
+ * 
+ * @attention This function must have the logOption and logPriorityOption 
+ * in the system.
+ */
+void setupLogger(void)
+{
+    uint8_t logPriority = 0;
 
     if (logPriorityOption.isSet())
     {
@@ -73,51 +152,14 @@ int main(int argc, char **argv)
         cLog::getInstance()->init(logPriority, "");
     }
 
-    INFO << ("Parsed and handled options\n");
-    WARNING << "Started log with priority: " << logPriority << "\n";
-    ERROR << "Test Error \n";
-    DEBUG << "Test Debug \n";
- 
-    //Pass arguments to Verilated code
-    contextp->commandArgs(argc, argv);
+    INFO << "Started log with priority: " << logPriority << "\n";
+}
 
-    //Create model for DUT
-    cAPBUart16550TestBench* testbench = new cAPBUart16550TestBench(contextp.get());
+void getScope()
+{
+    //INFO << "Called getScope()" << std::endl;
+    svScope scope = svGetScope();
+    const char* scopeName = svGetNameFromScope(scope);
 
-
-    testbench->opentrace("waveform.vcd");
-
-    //Idle APB bus
-    testbench->APBIdle(2);
-
-    //run APB Reset test
-    testbench->APBReset(3);
-
-    //run scratchpad test
-    testbench->scratchpadTest(10);
-
-    //program baudrate
-    testbench->setBaudRate(baudrate);
-    
-    //Program data format
-    testbench->setFormat(8,1,oddParity);
-
-    //write data
-    testbench->sendByte(0xDE);
-    testbench->sendByte(0xAD);
-    testbench->sendByte(0xBE);
-    testbench->sendByte(0xEF);
-
-
-    //Idle APB bus
-    testbench->APBIdle(100000);
-
-    //destroy testbench
-    delete testbench;
-
-    // Close the log
-    cLog::getInstance()->close();
-    
-    //Completed succesfully
-    return 0;
+    INFO << "ScopeName:" << scopeName << "\n";
 }

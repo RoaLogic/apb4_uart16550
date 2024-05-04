@@ -1,14 +1,37 @@
-/**
- * @file tb_apb_uart16550.hpp
- * @author B.Schouteten
- * @brief 
- * @version 0.1
- * @date 2023-04-30
- * 
- * @copyright Copyright (c) 2023
- * 
- */
-
+/////////////////////////////////////////////////////////////////////
+//   ,------.                    ,--.                ,--.          //
+//   |  .--. ' ,---.  ,--,--.    |  |    ,---. ,---. `--' ,---.    //
+//   |  '--'.'| .-. |' ,-.  |    |  |   | .-. | .-. |,--.| .--'    //
+//   |  |\  \ ' '-' '\ '-'  |    |  '--.' '-' ' '-' ||  |\ `--.    //
+//   `--' '--' `---'  `--`--'    `-----' `---' `-   /`--' `---'    //
+//                                             `---'               //
+//    UART16550 Verilator Testbench                                //
+//                                                                 //
+/////////////////////////////////////////////////////////////////////
+//                                                                 //
+//             Copyright (C) 2024 Roa Logic BV                     //
+//             www.roalogic.com                                    //
+//                                                                 //
+//     This source file may be used and distributed without        //
+//   restriction provided that this copyright statement is not     //
+//   removed from the file and that any derivative work contains   //
+//   the original copyright notice and the associated disclaimer.  //
+//                                                                 //
+//      THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY        //
+//   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED     //
+//   TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS     //
+//   FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL THE AUTHOR        //
+//   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,           //
+//   INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES      //
+//   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE     //
+//   GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR          //
+//   BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    //
+//   LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT    //
+//   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT    //
+//   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE           //
+//   POSSIBILITY OF SUCH DAMAGE.                                   //
+//                                                                 //
+/////////////////////////////////////////////////////////////////////
 //For std::unique_ptr
 #include <memory>
 
@@ -25,8 +48,11 @@
 //Include APB4 bus
 #include <busapb4.hpp>
 
-//Include circular buffer for APB4 read/write
-#include <buffer.hpp>
+using namespace RoaLogic;
+using namespace testbench;
+using namespace tasks;
+using namespace clock;
+using namespace bus;
 
 //165550 Register Definitions
 #define RBR          0x0
@@ -108,37 +134,48 @@
 #define DCD          0x80
 
 
-typedef enum {
-             noneParity = 0x00,
-             oddParity  = 0x08,
-             evenParity = 0x18
-           } parity_t;
-
-
-class cAPBUart16550TestBench : public RoaLogic::testbench::cTestBench<Vapb_uart16550>
+typedef enum 
 {
+    noneParity = 0x00,
+    oddParity  = 0x08,
+    evenParity = 0x18
+} parity_t;
+
+
+/**
+ * @class cAPBUart16550TestBench
+ * @author Richard Herveille, Bjorn Schouteten
+ * @brief APB Uart16550 class for a testbench
+ * @version 0.1
+ * @date 30-apr-2023
+ *
+ * @details This is the class to control the APB uart 16550 testbench
+ * 
+ * This object controls the APB uart16550 testbench in a specific way. It has knowledge of all the
+ * high level connections and how to control the DUT. Tests can be added and run without the context 
+ * of this class. 
+ * 
+ * It is derived from the cTestBench to have a general testbench control
+ *
+ */
+class cAPBUart16550TestBench : public cTestBench<Vapb_uart16550>
+{
+    private:
+        cClock* pclk;
+        cBusAPB4<uint8_t, uint8_t>* apbMaster;
+        
+        sCoRoutineHandler<bool> generateReset();
+
+        sCoRoutineHandler<bool> scratchpadTest (size_t runs);
+
+        void    release(uint8_t reg);
+        void    poke (uint8_t reg, uint8_t val);
+        uint8_t peek (uint8_t reg);
+
     public:
-        RoaLogic::testbench::clock::cClock* pclk;
-        RoaLogic::bus::cBusAPB4<uint8_t,uint8_t,RoaLogic::common::ringbuffer<uint8_t>>* apbMaster;
-        RoaLogic::common::ringbuffer<uint8_t> *transactionBuffer;
 
-        //constructor
-        cAPBUart16550TestBench(VerilatedContext* context);
-
-        //destructor
+        cAPBUart16550TestBench(VerilatedContext* context, bool traceActive);
         ~cAPBUart16550TestBench();
 
-        void    poke (uint8_t reg, uint8_t val);
-        uint8_t peek (uint8_t reg) const;
-        void    release (uint8_t reg);
-        bool    equal (uint8_t reg, uint8_t val) const;
-
-        void APBIdle(unsigned duration=1);
-        void APBReset(unsigned duration=1);
-
-        void scratchpadTest(unsigned runs=1);
-
-        void setBaudRate(unsigned baudrate);
-        void setFormat(uint8_t wordLength, uint8_t stopBits, parity_t parity);
-        void sendByte(uint8_t val);
+        int run();       
 };
