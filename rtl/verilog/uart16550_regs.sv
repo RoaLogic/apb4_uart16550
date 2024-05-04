@@ -9,7 +9,7 @@
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
-//             Copyright (C) 2023 ROA Logic BV                     //
+//             Copyright (C) 2024 Roa Logic BV                     //
 //             www.roalogic.com                                    //
 //                                                                 //
 //   This source file may be used and distributed without          //
@@ -156,81 +156,82 @@ import uart16550_pkg::*;
   //
   // Functions
   //
-`ifdef VERILATOR
-  import "DPI-C" context function void getScope();
-  initial getScope();
+  `ifdef VERILATOR
+   import "DPI-C" context function void getScope();
+   initial getScope();
 
 
-  /**
-   * @brief DPI function to peek CSRs
-   */
-  export "DPI-C" function uart16550_peek;
-  function byte uart16550_peek(input byte r);
-  begin
-      byte result;
+    /**
+    * @brief DPI function to peek CSRs
+    */
+    export "DPI-C" function uart16550_peek;
+    function byte uart16550_peek(input byte r);
+    begin
+        byte result;
 
-      case(r)
-          {4'h0,1'b0, RBR_ADR}: result = rx_q_i.d; //read only register
-//          {4'h0,1'b0, THR_ADR}: result = csr.thr;
-          {4'h0,1'b0, IER_ADR}: result = csr.ier;
-          {4'h0,1'b0, IIR_ADR}: result = csr.iir;  //read only register
-          {4'h1,1'b0, FCR_ADR}: result = csr.fcr;  //write only register
-          {4'h0,1'b0, LCR_ADR}: result = csr.lcr;
-          {4'h0,1'b0, MCR_ADR}: result = csr.mcr;
-          {4'h0,1'b0, LSR_ADR}: result = csr.lsr;
-          {4'h0,1'b0, MSR_ADR}: result = csr.msr;
-          {4'h0,1'b0, SCR_ADR}: result = csr.scr;
+        case(r)
+            {4'h0,1'b0, RBR_ADR}: result = rx_q_i.d; //read only register
+  //          {4'h0,1'b0, THR_ADR}: result = csr.thr;
+            {4'h0,1'b0, IER_ADR}: result = csr.ier;
+            {4'h0,1'b0, IIR_ADR}: result = csr.iir;  //read only register
+            {4'h1,1'b0, FCR_ADR}: result = csr.fcr;  //write only register
+            {4'h0,1'b0, LCR_ADR}: result = csr.lcr;
+            {4'h0,1'b0, MCR_ADR}: result = csr.mcr;
+            {4'h0,1'b0, LSR_ADR}: result = csr.lsr;
+            {4'h0,1'b0, MSR_ADR}: result = csr.msr;
+            {4'h0,1'b0, SCR_ADR}: result = csr.scr;
 
-          {4'h2,1'b0, DLL_ADR}: result = dl.dll;
-          {4'h2,1'b0, DLM_ADR}: result = dl.dlm;
-          default             : result = 0;
-      endcase
+            {4'h2,1'b0, DLL_ADR}: result = dl.dll;
+            {4'h2,1'b0, DLM_ADR}: result = dl.dlm;
+            default             : result = 0;
+        endcase
 
-      return result;
-  end
-  endfunction
-
-
-  /**
-   * @brief DPI task to poke CSRs
-   */
-  export "DPI-C" task uart16550_poke;
-  task uart16550_poke(input byte r, input byte d);
-  begin
-      case(r)
-          {4'h0,1'b0, IER_ADR}: begin force csr.ier = d; release csr.ier; end
-          {4'h0,1'b0, IIR_ADR}: begin force csr.iir = d; release csr.iir; end
-          {4'h1,1'b0, FCR_ADR}:       force csr.fcr = d;
-          {4'h0,1'b0, LCR_ADR}: begin force csr.lcr = d; release csr.lcr; end
-          {4'h0,1'b0, MCR_ADR}: begin force csr.mcr = d; release csr.mcr; end
-          {4'h0,1'b0, LSR_ADR}:       force csr.lsr = d;
-          {4'h0,1'b0, MSR_ADR}:       force csr.msr = d;
-          {4'h0,1'b0, SCR_ADR}: begin force csr.scr = d; release csr.scr; end
-
-          {4'h2,1'b0, DLL_ADR}: begin force dl.dll  = d; release dl.dll;  end
-          {4'h2,1'b0, DLM_ADR}: begin force dl.dlm  = d; release dl.dlm;  end
-          default             : ;                                              //some registers are simply not pokeable
-      endcase
-  end
-  endtask
+        return result;
+    end
+    endfunction
 
 
-  /**
-   * @brief DPI task to release CSR registers from force
-   */
-  export "DPI-C" task uart16550_release;
-  task uart16550_release(input byte r);
-  begin
-      case(r)
-          {4'h0,1'b0, IIR_ADR}: release csr.iir;
-          {4'h1,1'b0, FCR_ADR}: release csr.fcr;
-          {4'h0,1'b0, LSR_ADR}: release csr.lsr;
-          {4'h0,1'b0, MSR_ADR}: release csr.msr;
-          default             : ;                //no need to release other registers (already released)
-      endcase
-  end
-  endtask
-`endif
+    /**
+    * @brief DPI task to poke CSRs
+    */
+    export "DPI-C" task uart16550_poke;
+    task uart16550_poke(input byte r, input byte d);
+    begin
+        case(r)
+            {4'h0,1'b0, IER_ADR}: begin force csr.ier = d; release csr.ier; end
+            {4'h0,1'b0, IIR_ADR}: begin force csr.iir = d; release csr.iir; end
+            {4'h1,1'b0, FCR_ADR}:       force csr.fcr = d;
+            {4'h0,1'b0, LCR_ADR}: begin force csr.lcr = d; release csr.lcr; end
+            {4'h0,1'b0, MCR_ADR}: begin force csr.mcr = d; release csr.mcr; end
+            {4'h0,1'b0, LSR_ADR}:       force csr.lsr = d;
+            {4'h0,1'b0, MSR_ADR}:       force csr.msr = d;
+            {4'h0,1'b0, SCR_ADR}: begin force csr.scr = d; release csr.scr; end
+
+            {4'h2,1'b0, DLL_ADR}: begin force dl.dll  = d; release dl.dll;  end
+            {4'h2,1'b0, DLM_ADR}: begin force dl.dlm  = d; release dl.dlm;  end
+            default             : ;                                              //some registers are simply not pokeable
+        endcase
+    end
+    endtask
+
+
+    /**
+    * @brief DPI task to release CSR registers from force
+    */
+    export "DPI-C" task uart16550_release;
+    task uart16550_release(input byte r);
+    begin
+        case(r)
+            {4'h0,1'b0, IIR_ADR}: release csr.iir;
+            {4'h1,1'b0, FCR_ADR}: release csr.fcr;
+            {4'h0,1'b0, LSR_ADR}: release csr.lsr;
+            {4'h0,1'b0, MSR_ADR}: release csr.msr;
+            default             : ;                //no need to release other registers (already released)
+        endcase
+    end
+    endtask
+  `endif
+
 
   //////////////////////////////////////////////////////////////////
   //
